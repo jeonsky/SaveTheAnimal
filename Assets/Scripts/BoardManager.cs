@@ -9,17 +9,11 @@ public class BoardManager : MonoBehaviour
     public GameObject tilePrefab;
     public bool isAnimating = false;
 
+    // 여기 추가: Inspector에서 동물 이미지 5개 넣을 배열
+    public Sprite[] animalSprites;
+
     public static BoardManager instance;
     private GameObject[,] board;
-
-    private Color[] tileColors = new Color[]
-    {
-        new Color(1f, 0.4f, 0.4f),
-        new Color(0.4f, 0.6f, 1f),
-        new Color(0.4f, 0.9f, 0.4f),
-        new Color(1f, 0.9f, 0.4f),
-        new Color(1f, 0.7f, 0.4f)
-    };
 
     void Awake()
     {
@@ -47,7 +41,12 @@ public class BoardManager : MonoBehaviour
 
     void SpawnTileNoMatch(int x, int y)
     {
-        List<int> available = new List<int> { 0, 1, 2, 3, 4 };
+        List<int> available = new List<int>();
+
+        for (int i = 0; i < animalSprites.Length; i++)
+        {
+            available.Add(i);
+        }
 
         if (x >= 2)
         {
@@ -71,7 +70,7 @@ public class BoardManager : MonoBehaviour
             }
         }
 
-        int colorIdx = available[Random.Range(0, available.Count)];
+        int animalIdx = available[Random.Range(0, available.Count)];
         Vector3 pos = BoardToWorldPosition(x, y);
 
         GameObject tile = Instantiate(tilePrefab, pos, Quaternion.identity);
@@ -80,8 +79,8 @@ public class BoardManager : MonoBehaviour
         Tile tileScript = tile.GetComponent<Tile>();
         tileScript.x = x;
         tileScript.y = y;
-        tileScript.colorIndex = colorIdx;
-        tileScript.SetColor(GetColor(colorIdx));
+        tileScript.colorIndex = animalIdx;
+        tileScript.SetSprite(animalSprites[animalIdx]);
 
         board[x, y] = tile;
     }
@@ -110,11 +109,9 @@ public class BoardManager : MonoBehaviour
         Vector3 posA = BoardToWorldPosition(origAx, origAy);
         Vector3 posB = BoardToWorldPosition(origBx, origBy);
 
-        // 1. 먼저 화면상으로 스왑 애니메이션
         yield return StartCoroutine(MoveTo(a.gameObject, posB));
         yield return StartCoroutine(MoveTo(b.gameObject, posA));
 
-        // 2. board/좌표를 스왑 상태로 반영
         a.x = origBx;
         a.y = origBy;
         b.x = origAx;
@@ -129,7 +126,6 @@ public class BoardManager : MonoBehaviour
         List<GameObject> matched = FindAllMatches();
         Debug.Log("매치된 타일 수: " + matched.Count);
 
-        // 3. 매치 없으면 원위치 복귀
         if (matched.Count == 0)
         {
             Debug.Log("매치 없음 → 원위치 복귀");
@@ -155,12 +151,9 @@ public class BoardManager : MonoBehaviour
             yield break;
         }
 
-        // 4. 매치 있으면 제거
         ClearMatches(matched);
 
         yield return StartCoroutine(FillBoardRoutine());
-
-        // 5. 리필 후 자동 연쇄 매치 처리
         yield return StartCoroutine(CheckAutoMatchesRoutine());
 
         if (colA != null) colA.enabled = true;
@@ -303,13 +296,13 @@ public class BoardManager : MonoBehaviour
                 GameObject tile = Instantiate(tilePrefab, startPos, Quaternion.identity);
                 tile.name = $"Tile({x},{y})";
 
-                int colorIdx = Random.Range(0, tileColors.Length);
+                int animalIdx = Random.Range(0, animalSprites.Length);
 
                 Tile tileScript = tile.GetComponent<Tile>();
                 tileScript.x = x;
                 tileScript.y = y;
-                tileScript.colorIndex = colorIdx;
-                tileScript.SetColor(GetColor(colorIdx));
+                tileScript.colorIndex = animalIdx;
+                tileScript.SetSprite(animalSprites[animalIdx]);
 
                 board[x, y] = tile;
 
@@ -352,10 +345,5 @@ public class BoardManager : MonoBehaviour
     void UpdateTileName(Tile tile)
     {
         tile.gameObject.name = $"Tile({tile.x},{tile.y})";
-    }
-
-    public Color GetColor(int index)
-    {
-        return tileColors[index];
     }
 }

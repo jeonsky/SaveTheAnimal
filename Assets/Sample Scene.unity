@@ -288,6 +288,13 @@ MonoBehaviour:
   width: 7
   height: 7
   tilePrefab: {fileID: 7634159543913278978, guid: e161d153875594b03a652dfbc6bc51f4, type: 3}
+  isAnimating: 0
+  animalSprites:
+  - {fileID: 21300000, guid: ba8fe724cca6e4094a3b7761b98f2ec3, type: 3}
+  - {fileID: 21300000, guid: 9e9dabd262b844604af5ea84d2e5e304, type: 3}
+  - {fileID: 21300000, guid: 5b914b3e4817c4cda8b372e71c0f85af, type: 3}
+  - {fileID: 21300000, guid: 9247bcaf6184147a296411289d494a30, type: 3}
+  - {fileID: 21300000, guid: 15b2952f04f034dfb94a27053e30c5ba, type: 3}
 --- !u!4 &1631629635
 Transform:
   m_ObjectHideFlags: 0

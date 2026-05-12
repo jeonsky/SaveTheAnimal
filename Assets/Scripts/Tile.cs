@@ -4,6 +4,9 @@ public class Tile : MonoBehaviour
 {
     public int x;
     public int y;
+
+    // 기존 colorIndex 이름은 유지
+    // 실제 의미는 animalIndex라고 보면 됨
     public int colorIndex;
 
     public static Tile selectedTile = null;
@@ -57,11 +60,14 @@ public class Tile : MonoBehaviour
 
     public void Highlight(bool on)
     {
-        sr.color = on ? Color.white : BoardManager.instance.GetColor(colorIndex);
+        // 선택 시 살짝 투명하게 표시
+        // 선택 해제 시 원래 이미지 색상으로 복귀
+        sr.color = on ? new Color(1f, 1f, 1f, 0.6f) : Color.white;
     }
 
-    public void SetColor(Color color)
+    public void SetSprite(Sprite sprite)
     {
-        sr.color = color;
+        sr.sprite = sprite;
+        sr.color = Color.white;
     }
 }
