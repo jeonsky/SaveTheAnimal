@@ -181,17 +181,28 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-    void ClearMatches(List<GameObject> matched)
-    {
-        foreach (GameObject matchedTile in matched)
-        {
-            if (matchedTile == null) continue;
+void ClearMatches(List<GameObject> matched)
+{
+    Debug.Log("구조 카운트 추가 시도: " + matched.Count);
 
-            Tile t = matchedTile.GetComponent<Tile>();
-            board[t.x, t.y] = null;
-            Destroy(matchedTile);
-        }
+    if (StageManager.instance != null)
+    {
+        StageManager.instance.AddRescueCount(matched.Count);
     }
+    else
+    {
+        Debug.LogError("StageManager instance가 없음!");
+    }
+
+    foreach (GameObject matchedTile in matched)
+    {
+        if (matchedTile == null) continue;
+
+        Tile t = matchedTile.GetComponent<Tile>();
+        board[t.x, t.y] = null;
+        Destroy(matchedTile);
+    }
+}
 
     public List<GameObject> FindAllMatches()
     {
