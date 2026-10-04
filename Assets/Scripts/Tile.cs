@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Tile : MonoBehaviour
 {
@@ -20,6 +21,9 @@ public class Tile : MonoBehaviour
     void OnMouseDown()
     {
         if (BoardManager.instance.isAnimating) return;
+        if (StageManager.instance != null && !StageManager.instance.IsPlaying()) return;
+        // UI(버튼 등) 위를 눌렀으면 타일 선택 무시
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
         if (selectedTile == null)
         {

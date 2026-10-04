@@ -39,6 +39,24 @@ public class BoardManager : MonoBehaviour
         }
     }
 
+    /// <summary>보드를 전부 지우고 새로 생성 (재시작/홈 이동 시)</summary>
+    public void ResetBoard()
+    {
+        StopAllCoroutines();
+        isAnimating = false;
+        Tile.selectedTile = null;
+
+        if (board != null)
+        {
+            foreach (GameObject tile in board)
+            {
+                if (tile != null) Destroy(tile);
+            }
+        }
+
+        CreateBoard();
+    }
+
     void SpawnTileNoMatch(int x, int y)
     {
         List<int> available = new List<int>();
@@ -181,28 +199,34 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-void ClearMatches(List<GameObject> matched)
-{
-    Debug.Log("구조 카운트 추가 시도: " + matched.Count);
-
-    if (StageManager.instance != null)
+    void ClearMatches(List<GameObject> matched)
     {
-        StageManager.instance.AddRescueCount(matched.Count);
-    }
-    else
-    {
-        Debug.LogError("StageManager instance가 없음!");
-    }
+        // 동물 종류별로 몇 마리 구조했는지 집계 → 도감/결과 화면에서 사용
+        int[] countsByAnimal = new int[animalSprites.Length];
 
-    foreach (GameObject matchedTile in matched)
-    {
-        if (matchedTile == null) continue;
+        foreach (GameObject matchedTile in matched)
+        {
+            if (matchedTile == null) continue;
 
-        Tile t = matchedTile.GetComponent<Tile>();
-        board[t.x, t.y] = null;
-        Destroy(matchedTile);
+            Tile t = matchedTile.GetComponent<Tile>();
+            if (t.colorIndex >= 0 && t.colorIndex < countsByAnimal.Length)
+            {
+                countsByAnimal[t.colorIndex]++;
+            }
+
+            board[t.x, t.y] = null;
+            Destroy(matchedTile);
+        }
+
+        if (StageManager.instance != null)
+        {
+            StageManager.instance.AddRescue(countsByAnimal);
+        }
+        else
+        {
+            Debug.LogError("StageManager instance가 없음!");
+        }
     }
-}
 
     public List<GameObject> FindAllMatches()
     {
