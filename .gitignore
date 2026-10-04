@@ -6,3 +6,8 @@ UserSettings/
 *.csproj
 *.slnx
 .vscode/
+
+# 로컬 백업 / 유니티 크래시 복구 폴더
+_backup_before_ui/
+Assets/_Recovery/
+Assets/_Recovery.meta
