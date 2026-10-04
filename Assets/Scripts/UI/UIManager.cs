@@ -29,6 +29,7 @@ public class UIManager : MonoBehaviour
         HideLegacyUI();
 
         RectTransform root = BuildCanvas();
+        gameObject.AddComponent<GameBackdrop>(); // 인게임 배경/카메라
 
         // 생성 순서 = 그려지는 순서 (나중에 만든 게 위에 뜸)
         hud = new HUDView(root, this);

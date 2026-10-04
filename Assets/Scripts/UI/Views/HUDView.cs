@@ -6,6 +6,7 @@ public class HUDView : UIView
 {
     readonly UIFactory.Bar timeBar;
     readonly UIFactory.Bar rescueBar;
+    readonly TextMeshProUGUI stageLabel;
     int lastSecond = -1;
 
     StageManager Stage => StageManager.instance;
@@ -26,6 +27,12 @@ public class HUDView : UIView
             var bar = UIFactory.Img(pauseBtn.transform, "PauseIcon", Color.white, UIFactory.Rounded);
             bar.rectTransform.Center(i == 0 ? -18f : 18f, 0, 22f, 68f);
         }
+
+        // 패널 아래 스테이지 표시
+        var stagePill = UIFactory.Img(Root, "StagePill", UIFactory.Orange, UIFactory.Rounded);
+        stagePill.rectTransform.Place(new Vector2(0f, 1f), new Vector2(40f, -284f), new Vector2(230f, 58f));
+        stageLabel = UIFactory.Label(stagePill.transform, "", 34, Color.white, true);
+        stageLabel.rectTransform.Stretch();
     }
 
     static UIFactory.Bar BuildRow(Transform parent, string label, float top, Color fillColor)
@@ -43,7 +50,9 @@ public class HUDView : UIView
     protected override void OnShow()
     {
         lastSecond = -1;
-        if (Stage != null) SetRescue(Stage.currentRescueCount, Stage.targetRescueCount);
+        if (Stage == null) return;
+        stageLabel.text = "STAGE " + Stage.PlayedStage;
+        SetRescue(Stage.currentRescueCount, Stage.targetRescueCount);
     }
 
     protected override void OnTick()
