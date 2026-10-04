@@ -22,7 +22,8 @@ public class BoardManager : MonoBehaviour
 
     void Start()
     {
-        CreateBoard();
+        // StageManager가 스테이지 준비하면서 이미 보드를 만들었으면 건너뜀
+        if (board == null) CreateBoard();
     }
 
     void CreateBoard()
@@ -55,6 +56,16 @@ public class BoardManager : MonoBehaviour
         }
 
         CreateBoard();
+    }
+
+    /// <summary>보드 전체가 차지하는 월드 영역 (배경 패널/카메라 맞춤용)</summary>
+    public Bounds GetBoardBounds()
+    {
+        Vector3 min = BoardToWorldPosition(0, 0);
+        Vector3 max = BoardToWorldPosition(width - 1, height - 1);
+        Vector3 cell = BoardToWorldPosition(1, 1) - min;
+
+        return new Bounds((min + max) / 2f, new Vector3(max.x - min.x + cell.x, max.y - min.y + cell.y, 0f));
     }
 
     void SpawnTileNoMatch(int x, int y)
