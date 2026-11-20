@@ -4,10 +4,8 @@ using UnityEngine;
 
 public enum GameState { Ready, Playing, Paused, Ended }
 
-/// <summary>
-/// 스테이지 진행(타이머, 구조 수, 클리어/실패), 스테이지 번호, 입양 처리, 게임 흐름(State)을 담당.
-/// UI는 직접 건드리지 않고 이벤트로만 알린다 → 화면은 UIManager가 담당.
-/// </summary>
+// 스테이지 진행(타이머, 구조 수, 클리어/실패), 스테이지 번호, 입양 처리, 게임 흐름(State)을 담당.
+// UI는 직접 건드리지 않고 이벤트로만 알린다 → 화면은 UIManager가 담당.
 public class StageManager : MonoBehaviour
 {
     public static StageManager instance;
@@ -34,13 +32,13 @@ public class StageManager : MonoBehaviour
     public GameState State { get; private set; } = GameState.Ready;
     public bool IsCleared { get; private set; }
 
-    /// <summary>저장된 진행 스테이지 (클리어하면 +1)</summary>
+    // 저장된 진행 스테이지 (클리어하면 +1)
     public int CurrentStage => Mathf.Max(1, PlayerPrefs.GetInt(KeyStage, 1));
-    /// <summary>지금 플레이 중인(또는 방금 끝난) 스테이지</summary>
+    // 지금 플레이 중인(또는 방금 끝난) 스테이지 
     public int PlayedStage { get; private set; } = 1;
-    /// <summary>이번 판 보드에 나오는 동물들</summary>
+    // 이번 판 보드에 나오는 동물들
     public Sprite[] Roster { get; private set; } = new Sprite[0];
-    /// <summary>다음 판에 새로 합류하는 동물들 (게임 종료 시 계산)</summary>
+    // 다음 판에 새로 합류하는 동물들 (게임 종료 시 계산)
     public IReadOnlyList<Sprite> NewFriends => newFriends;
 
     public event Action<GameState> OnStateChanged;
@@ -93,7 +91,7 @@ public class StageManager : MonoBehaviour
 
     // ───────────────────────── 게임 흐름 ─────────────────────────
 
-    /// <summary>하트 1개를 소모하고 게임 시작. 하트가 없으면 false.</summary>
+    // 하트 1개를 소모하고 게임 시작. 하트가 없으면 false.
     public bool StartGame()
     {
         if (State != GameState.Ready) return false;
@@ -117,21 +115,21 @@ public class StageManager : MonoBehaviour
         SetState(GameState.Playing);
     }
 
-    /// <summary>현재 스테이지를 새로 깔고 바로 시작 (클리어 후라면 = 다음 스테이지). 하트 1개 소모.</summary>
+    // 현재 스테이지를 새로 깔고 바로 시작 (클리어 후라면 = 다음 스테이지). 하트 1개 소모
     public void Retry()
     {
         PrepareStage();
         if (!StartGame()) SetState(GameState.Ready); // 하트가 없으면 타이틀로
     }
 
-    /// <summary>현재 스테이지를 새로 깔고 타이틀 화면으로.</summary>
+    // 현재 스테이지를 새로 깔고 타이틀 화면으로.
     public void GoHome()
     {
         PrepareStage();
         SetState(GameState.Ready);
     }
 
-    /// <summary>스테이지 번호에 맞게 목표/동물 구성/보드를 준비</summary>
+    // 스테이지 번호에 맞게 목표/동물 구성/보드를 준비
     void PrepareStage()
     {
         Time.timeScale = 1f;
@@ -163,7 +161,7 @@ public class StageManager : MonoBehaviour
 
     // ───────────────────────── 구조 카운트 ─────────────────────────
 
-    /// <summary>동물 종류별 구조 수를 한 번에 반영 (index = Roster 인덱스).</summary>
+    // 동물 종류별 구조 수를 한 번에 반영 (index = Roster 인덱스).
     public void AddRescue(int[] countsByAnimal)
     {
         if (State != GameState.Playing || countsByAnimal == null) return;

@@ -51,7 +51,8 @@ public abstract class UIView
     protected void AddBlocker(Color color)
     {
         var bg = UIFactory.Img(Root, "Blocker", color);
-        bg.rectTransform.Stretch();
+        // 화면이 안전 영역(SafeArea) 안에 그려지므로, 배경은 바깥(노치 영역)까지 넉넉하게 덮음
+        bg.rectTransform.Stretch(-400, -400, -400, -400);
         bg.raycastTarget = true;
     }
 }

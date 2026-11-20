@@ -60,14 +60,19 @@ public class GameBackdrop : MonoBehaviour
 
     void FitCamera()
     {
+        // 시뮬레이터/기기 시작 직후 화면 크기가 0으로 들어오는 프레임이 있음 → 0으로 나누면 NaN
+        if (Screen.width <= 0 || Screen.height <= 0) return;
+
         lastScreen = new Vector2Int(Screen.width, Screen.height);
         if (cam == null || !cam.orthographic || BoardManager.instance == null) return;
 
-        // CanvasScaler(1080x1920, match 0.5)와 같은 방식으로 캔버스 높이 계산
-        float scale = Mathf.Pow(2f, Mathf.Lerp(Mathf.Log(Screen.width / 1080f, 2f), Mathf.Log(Screen.height / 1920f, 2f), 0.5f));
-        float canvasHeight = Screen.height / scale;
+        // UIManager의 CanvasScaler 규칙과 동일: 세로 화면은 가로 1080 기준, 가로 화면은 세로 1920 기준
+        float canvasHeight = Screen.width <= Screen.height ? 1080f * Screen.height / Screen.width : 1920f;
 
-        float top = Mathf.Clamp01(HudReserve / canvasHeight);
+        // 펀치홀/노치 등 안전 영역 밖(상단) 비율
+        float notch = Mathf.Clamp01((Screen.height - Screen.safeArea.yMax) / Screen.height);
+
+        float top = Mathf.Clamp01(HudReserve / canvasHeight + notch);
         float bottom = Mathf.Clamp01(BottomReserve / canvasHeight);
         float available = Mathf.Max(0.3f, 1f - top - bottom); // 보드가 들어갈 세로 비율
 
