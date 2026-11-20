@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>타이틀 화면: 로고, 현재 스테이지, 이번 판 동물, 하트 현황, START / COLLECTION 버튼</summary>
+/// <summary>타이틀 화면: 로고, 현재 스테이지, 이번 판 동물, 하트 현황, START / SHELTER / YARD 버튼</summary>
 public class TitleView : UIView
 {
     readonly HeartsWidget hearts;
@@ -10,6 +10,10 @@ public class TitleView : UIView
     readonly TextMeshProUGUI hint;
     readonly TextMeshProUGUI stageLabel;
     readonly RectTransform animalRow;
+    readonly Image adoptBadge;
+    readonly TextMeshProUGUI adoptBadgeText;
+    readonly Image yardBadge;
+    readonly TextMeshProUGUI yardBadgeText;
 
     public TitleView(RectTransform parent, UIManager ui) : base(parent, ui, "Title")
     {
@@ -40,21 +44,40 @@ public class TitleView : UIView
         hint = UIFactory.Label(Root, "", 36, UIFactory.SubInk);
         hint.rectTransform.Center(0, -410, 1000, 50);
 
-        var collectionButton = UIFactory.MakeButton(Root, "SHELTER", UIFactory.Blue, ui.OpenCollection, 54);
-        collectionButton.RT().Center(0, -540, 640, 140);
+        // 왼쪽: SHELTER (도감 & 입양 보내기) / 오른쪽: YARD (입양한 친구들이 노는 마당)
+        var collectionButton = UIFactory.MakeButton(Root, "SHELTER", UIFactory.Blue, ui.OpenCollection, 48);
+        collectionButton.RT().Center(-168, -540, 304, 140);
+
+        adoptBadge = UIFactory.Img(collectionButton.transform, "AdoptBadge", UIFactory.Red, UIFactory.Rounded);
+        adoptBadge.rectTransform.Place(new Vector2(1f, 1f), new Vector2(12, 12), new Vector2(64, 64));
+        adoptBadgeText = UIFactory.Label(adoptBadge.transform, "", 32, Color.white, true);
+        adoptBadgeText.rectTransform.Stretch();
+        adoptBadge.gameObject.SetActive(false);
+
+        var yardButton = UIFactory.MakeButton(Root, "YARD", UIFactory.Orange, ui.OpenYard, 48);
+        yardButton.RT().Center(168, -540, 304, 140);
+
+        yardBadge = UIFactory.Img(yardButton.transform, "YardBadge", UIFactory.Green, UIFactory.Rounded);
+        yardBadge.rectTransform.Place(new Vector2(1f, 1f), new Vector2(12, 12), new Vector2(64, 64));
+        yardBadgeText = UIFactory.Label(yardBadge.transform, "", 32, Color.white, true);
+        yardBadgeText.rectTransform.Stretch();
+        yardBadge.gameObject.SetActive(false);
     }
 
     protected override void OnShow()
     {
-        StageManager stage = StageManager.instance;
-        if (stage != null)
-        {
-            stageLabel.text = "STAGE " + stage.PlayedStage;
-            BuildAnimalRow(stage.Roster);
-        }
-
+        RefreshStageInfo();
         OnTick();
         ui.Run(UITween.PopIn(startButton.transform));
+    }
+
+    public void RefreshStageInfo()
+    {
+        StageManager stage = StageManager.instance;
+        if (stage == null) return;
+
+        stageLabel.text = "STAGE " + stage.PlayedStage;
+        BuildAnimalRow(stage.Roster);
     }
 
     protected override void OnTick()
@@ -66,6 +89,20 @@ public class TitleView : UIView
         hint.text = hasHeart
             ? "Uses 1 heart (returned if you clear!)"
             : "No hearts left. Wait for a refill!";
+
+        int readyCount = CollectionData.CanAdoptCount();
+        adoptBadge.gameObject.SetActive(readyCount > 0);
+        if (readyCount > 0)
+        {
+            adoptBadgeText.text = readyCount.ToString();
+        }
+
+        int adoptedCount = CollectionData.AdoptedCount();
+        yardBadge.gameObject.SetActive(adoptedCount > 0);
+        if (adoptedCount > 0)
+        {
+            yardBadgeText.text = adoptedCount.ToString();
+        }
     }
 
     // 이번 판에 나오는 동물 + 처음 보는 동물에는 NEW 뱃지

@@ -129,6 +129,13 @@ public class StageManager : MonoBehaviour
         SetState(GameState.Ready);
     }
 
+    // 타이틀 화면(Ready)에서 보호소 입양을 완료했을 때 보드 동물 목록을 즉시 새로고침
+    public void RefreshRosterIfReady()
+    {
+        if (State != GameState.Ready) return;
+        PrepareStage();
+    }
+
     // 스테이지 번호에 맞게 목표/동물 구성/보드를 준비
     void PrepareStage()
     {
@@ -225,7 +232,11 @@ public class StageManager : MonoBehaviour
             CollectionData.Add(id, rescuedByAnimal[i]);
 
             if (before == 0) newlyMet.Add(i);
-            if (before < goal && before + rescuedByAnimal[i] >= goal) adoptedNow.Add(i);
+            // 이번 판에 목표치를 처음 달성했으면 '보호소에서 입양 가능!' 알림용으로 기록
+            if (!CollectionData.IsAdopted(id) && before < goal && before + rescuedByAnimal[i] >= goal)
+            {
+                adoptedNow.Add(i);
+            }
         }
     }
 
@@ -280,6 +291,6 @@ public class StageManager : MonoBehaviour
             if (need > 0) CollectionData.Add(s.name, need);
         }
         PlayerPrefs.Save();
-        Debug.Log("이번 판에서 한 마리만 더 구하면 입양! (진행 중이면 다음 판부터 반영)");
+        Debug.Log("이번 판에서 한 마리만 더 구하면 입양 가능! (진행 중이면 다음 판부터 반영)");
     }
 }

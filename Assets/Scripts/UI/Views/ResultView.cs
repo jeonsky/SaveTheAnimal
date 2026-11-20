@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 결과 팝업: 클리어/실패, 이번 판에 구조한 동물(입양 진행도), 입양 소식,
+/// 결과 팝업: 클리어/실패, 이번 판에 구조한 동물(입양 진행도), 입양 가능 소식,
 /// 다음 판에 합류하는 새 친구, 하트 현황, 다음 스테이지/다시하기/홈/도감
 /// </summary>
 public class ResultView : UIView
@@ -92,15 +92,15 @@ public class ResultView : UIView
 
     static string BuildNote(StageManager stage, bool cleared)
     {
-        // 입양 소식이 최우선
-        var adopted = new List<string>();
+        // 입양 가능 소식이 최우선
+        var ready = new List<string>();
         for (int i = 0; i < stage.Roster.Length; i++)
         {
-            if (stage.WasAdoptedNow(i)) adopted.Add(AnimalCatalog.DisplayName(stage.Roster[i].name));
+            if (stage.WasAdoptedNow(i)) ready.Add(AnimalCatalog.DisplayName(stage.Roster[i].name));
         }
-        if (adopted.Count > 0)
+        if (ready.Count > 0)
         {
-            return string.Join(", ", adopted) + (adopted.Count == 1 ? " found a new home!" : " found new homes!");
+            return string.Join(", ", ready) + " ready for adoption in Shelter!";
         }
 
         return cleared
@@ -123,7 +123,8 @@ public class ResultView : UIView
             int count = stage.GetRescued(i);
             int total = CollectionData.GetCount(id);
             int goal = CollectionData.Goal(id);
-            bool adopted = total >= goal;
+            bool adopted = CollectionData.IsAdopted(id);
+            bool canAdopt = CollectionData.CanAdopt(id);
             float x = -410f + slotWidth * (i + 0.5f);
 
             RectTransform slot = UIFactory.CreateRect("Slot" + i, animalRow).Center(x, 0, slotWidth, 240);
@@ -137,14 +138,14 @@ public class ResultView : UIView
                 .rectTransform.Center(0, -35, slotWidth, 48);
 
             // 입양까지 누적 진행도
-            UIFactory.Bar bar = UIFactory.MakeBar(slot, "AdoptBar", adopted ? UIFactory.Green : UIFactory.Orange, 22);
+            UIFactory.Bar bar = UIFactory.MakeBar(slot, "AdoptBar", (adopted || canAdopt) ? UIFactory.Green : UIFactory.Orange, 22);
             bar.Root.Center(0, -88, slotWidth - 30, 30);
             bar.Set((float)total / goal);
-            bar.Text.text = adopted ? "HOME" : $"{total}/{goal}";
+            bar.Text.text = adopted ? "HOME" : canAdopt ? "READY" : $"{total}/{goal}";
 
             if (stage.WasAdoptedNow(i))
             {
-                AddBadge(slot, "ADOPTED", UIFactory.Green, 150);
+                AddBadge(slot, "READY!", UIFactory.Green, 150);
             }
             else if (stage.IsNewDiscovery(i))
             {

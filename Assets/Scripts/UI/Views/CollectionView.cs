@@ -4,10 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 보호소 (구조한 동물 도감, 스크롤).
-/// - 아직 못 만난 동물: 검은 실루엣 + ???
-/// - 돌보는 중: 입양까지 누적 구조 진행도
-/// - 입양 완료: 초록 카드 + ADOPTED
+/// 보호소 (구조한 동물 도감 & 입양 보내기).
 /// </summary>
 public class CollectionView : UIView
 {
@@ -18,9 +15,11 @@ public class CollectionView : UIView
         public TextMeshProUGUI Name;
         public TextMeshProUGUI Status;
         public UIFactory.Bar Bar;
+        public Button AdoptButton;
     }
 
     static readonly Color AdoptedTint = UIFactory.Hex("E6F6EA");
+    static readonly Color ReadyTint   = UIFactory.Hex("FFF2DC");
 
     readonly RectTransform card;
     readonly RectTransform content;
@@ -28,6 +27,13 @@ public class CollectionView : UIView
     readonly TextMeshProUGUI progress;
     readonly List<Cell> cells = new List<Cell>();
     IReadOnlyList<Sprite> animals;
+
+    // 입양 축하 팝업 UI
+    readonly Image popupDim;
+    readonly RectTransform popupCard;
+    readonly Image popupIcon;
+    readonly TextMeshProUGUI popupTitle;
+    readonly TextMeshProUGUI popupDesc;
 
     public CollectionView(RectTransform parent, UIManager ui) : base(parent, ui, "Collection")
     {
@@ -40,9 +46,9 @@ public class CollectionView : UIView
         progress = UIFactory.Label(card, "", 40, UIFactory.SubInk, true);
         progress.rectTransform.TopStrip(146, 56);
 
-        // 스크롤 영역 (뷰포트 = 자기 자신, RectMask2D로 바깥 잘라냄)
+        // 스크롤 영역
         Image scrollArea = UIFactory.Img(card, "Scroll", new Color(0, 0, 0, 0));
-        scrollArea.raycastTarget = true; // 드래그 받기
+        scrollArea.raycastTarget = true;
         scrollArea.rectTransform.Stretch(30, 220, 30, 220);
         scrollArea.gameObject.AddComponent<RectMask2D>();
 
@@ -54,7 +60,7 @@ public class CollectionView : UIView
         content.sizeDelta = Vector2.zero;
 
         var grid = content.gameObject.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(200, 300);
+        grid.cellSize = new Vector2(200, 315);
         grid.spacing = new Vector2(18, 20);
         grid.padding = new RectOffset(0, 0, 10, 20);
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -74,13 +80,41 @@ public class CollectionView : UIView
 
         var close = UIFactory.MakeButton(card, "CLOSE", UIFactory.Gray, ui.CloseCollection, 54);
         close.RT().Place(new Vector2(0.5f, 0f), new Vector2(0, 50), new Vector2(520, 140));
+
+        // ─── 입양 축하 미니 팝업 ───
+        popupDim = UIFactory.Img(Root, "AdoptPopupDim", UIFactory.Dim);
+        popupDim.raycastTarget = true;
+        popupDim.rectTransform.Stretch();
+
+        popupCard = UIFactory.Img(popupDim.transform, "AdoptPopupCard", UIFactory.Cream, UIFactory.Rounded)
+            .rectTransform.Center(0, 0, 780, 760);
+
+        popupTitle = UIFactory.Label(popupCard, "HAPPY ADOPTION!", 64, UIFactory.Green, true);
+        popupTitle.rectTransform.Center(0, 270, 720, 90);
+
+        popupIcon = UIFactory.Img(popupCard, "AdoptIcon", Color.white);
+        popupIcon.preserveAspect = true;
+        popupIcon.rectTransform.Center(0, 70, 220, 220);
+
+        popupDesc = UIFactory.Label(popupCard, "", 38, UIFactory.Ink, true);
+        popupDesc.textWrappingMode = TextWrappingModes.Normal;
+        popupDesc.rectTransform.Center(0, -110, 680, 120);
+
+        var okBtn = UIFactory.MakeButton(popupCard, "AWESOME!", UIFactory.Green, () =>
+        {
+            popupDim.gameObject.SetActive(false);
+        }, 52);
+        okBtn.RT().Center(0, -260, 460, 130);
+
+        popupDim.gameObject.SetActive(false);
     }
 
     protected override void OnShow()
     {
+        popupDim.gameObject.SetActive(false);
         BuildCells();
         Refresh();
-        scroll.verticalNormalizedPosition = 1f; // 맨 위부터
+        scroll.verticalNormalizedPosition = 1f;
         ui.Run(UITween.PopIn(card));
     }
 
@@ -92,8 +126,10 @@ public class CollectionView : UIView
         foreach (Transform child in content) Object.Destroy(child.gameObject);
         cells.Clear();
 
-        foreach (Sprite sprite in animals)
+        for (int i = 0; i < animals.Count; i++)
         {
+            int index = i;
+            Sprite sprite = animals[i];
             var cell = new Cell();
 
             cell.Background = UIFactory.Img(content, "Cell", Color.white, UIFactory.Rounded);
@@ -101,22 +137,41 @@ public class CollectionView : UIView
 
             cell.Icon = UIFactory.Img(bg, "Icon", Color.white, sprite);
             cell.Icon.preserveAspect = true;
-            cell.Icon.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -18), new Vector2(120, 120));
+            cell.Icon.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -16), new Vector2(115, 115));
 
-            cell.Name = UIFactory.Label(bg, "", 32, UIFactory.Ink, true);
-            cell.Name.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -146), new Vector2(186, 42));
+            cell.Name = UIFactory.Label(bg, "", 30, UIFactory.Ink, true);
+            cell.Name.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -138), new Vector2(186, 40));
             cell.Name.enableAutoSizing = true;
             cell.Name.fontSizeMin = 20;
-            cell.Name.fontSizeMax = 32;
+            cell.Name.fontSizeMax = 30;
 
-            cell.Bar = UIFactory.MakeBar(bg, "AdoptBar", UIFactory.Orange, 22);
-            cell.Bar.Root.Place(new Vector2(0.5f, 1f), new Vector2(0, -198), new Vector2(170, 30));
+            cell.Bar = UIFactory.MakeBar(bg, "AdoptBar", UIFactory.Orange, 20);
+            cell.Bar.Root.Place(new Vector2(0.5f, 1f), new Vector2(0, -186), new Vector2(170, 28));
 
-            cell.Status = UIFactory.Label(bg, "", 26, UIFactory.SubInk, true);
-            cell.Status.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -240), new Vector2(186, 38));
+            cell.Status = UIFactory.Label(bg, "", 25, UIFactory.SubInk, true);
+            cell.Status.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -232), new Vector2(186, 44));
+
+            cell.AdoptButton = UIFactory.MakeButton(bg, "ADOPT!", UIFactory.Green, () => OnClickAdopt(index), 26);
+            cell.AdoptButton.RT().Place(new Vector2(0.5f, 1f), new Vector2(0, -230), new Vector2(168, 56));
 
             cells.Add(cell);
         }
+    }
+
+    void OnClickAdopt(int index)
+    {
+        Sprite sprite = animals[index];
+        string id = sprite.name;
+
+        if (!CollectionData.Adopt(id)) return;
+
+        ui.OnAnimalAdopted();
+        Refresh();
+
+        popupIcon.sprite = sprite;
+        popupDesc.text = $"{AnimalCatalog.DisplayName(id)} is now playing in the Yard!\n(+1 Heart Reward!)";
+        popupDim.gameObject.SetActive(true);
+        ui.Run(UITween.PopIn(popupCard));
     }
 
     void Refresh()
@@ -132,30 +187,42 @@ public class CollectionView : UIView
 
             if (count <= 0)
             {
-                // 아직 못 만난 동물
                 cell.Background.color = Color.white;
                 cell.Icon.color = new Color(0f, 0f, 0f, 0.75f);
                 cell.Name.text = "???";
                 cell.Bar.Root.gameObject.SetActive(false);
+                cell.Status.gameObject.SetActive(true);
                 cell.Status.text = "Not met yet";
                 cell.Status.color = UIFactory.Gray;
+                cell.AdoptButton.gameObject.SetActive(false);
                 continue;
             }
 
-            bool adopted = count >= goal;
+            bool adopted = CollectionData.IsAdopted(id);
+            bool canAdopt = CollectionData.CanAdopt(id);
             if (adopted) adoptedCount++;
 
-            cell.Background.color = adopted ? AdoptedTint : Color.white;
+            cell.Background.color = adopted ? AdoptedTint : canAdopt ? ReadyTint : Color.white;
             cell.Icon.color = Color.white;
             cell.Name.text = AnimalCatalog.DisplayName(id);
 
             cell.Bar.Root.gameObject.SetActive(true);
             cell.Bar.Fill.color = adopted ? UIFactory.Green : UIFactory.Orange;
             cell.Bar.Set((float)count / goal);
-            cell.Bar.Text.text = adopted ? $"{goal}/{goal}" : $"{count}/{goal}";
+            cell.Bar.Text.text = (adopted || canAdopt) ? $"{goal}/{goal}" : $"{count}/{goal}";
 
-            cell.Status.text = adopted ? "ADOPTED" : "In our care";
-            cell.Status.color = adopted ? UIFactory.Green : UIFactory.Orange;
+            if (canAdopt)
+            {
+                cell.Status.gameObject.SetActive(false);
+                cell.AdoptButton.gameObject.SetActive(true);
+            }
+            else
+            {
+                cell.AdoptButton.gameObject.SetActive(false);
+                cell.Status.gameObject.SetActive(true);
+                cell.Status.text = adopted ? "ADOPTED" : "In our care";
+                cell.Status.color = adopted ? UIFactory.Green : UIFactory.Orange;
+            }
         }
 
         progress.text = $"Adopted {adoptedCount} / {cells.Count}";
